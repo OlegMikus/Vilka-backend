@@ -1,28 +1,18 @@
-from fastapi import Depends, FastAPI, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from pydantic import BaseModel
-
+from fastapi import FastAPI
 from tortoise.contrib.fastapi import register_tortoise
 
+from src.authorization.routers import router
+from src.config.constants import DB_URL
+from src.config.settings import TORTOISE_MODULES
 
 app = FastAPI()
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token")
-
-TORTOISE_ORM = {
-    "connections": {"default": "postgres://postgres:password@localhost:5432/vilka_db"},
-    "apps": {
-        "models": {
-            "models": ["src.authorization.models", "aerich.models"],
-            "default_connection": "default",
-        },
-    },
-}
+app.include_router(router)
 
 register_tortoise(
     app,
-    db_url="postgres://postgres:password@localhost:5432/vilka_db",
-    modules={"models": ["src.authorization.models"]},
+    db_url=DB_URL,
+    modules=TORTOISE_MODULES,
     generate_schemas=True,
     add_exception_handlers=True,
 )

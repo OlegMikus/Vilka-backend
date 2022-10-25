@@ -9,7 +9,7 @@ async def upgrade(db: BaseDBAsyncClient) -> str:
     "name" VARCHAR(50),
     "family_name" VARCHAR(50),
     "category" VARCHAR(30) NOT NULL  DEFAULT 'misc',
-    "password_hash" VARCHAR(128),
+    "password" VARCHAR(128) NOT NULL,
     "created_at" TIMESTAMPTZ NOT NULL  DEFAULT CURRENT_TIMESTAMP,
     "modified_at" TIMESTAMPTZ NOT NULL  DEFAULT CURRENT_TIMESTAMP
 );

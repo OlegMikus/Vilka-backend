@@ -1,25 +1,14 @@
 from tortoise import fields, models
 from tortoise.contrib.pydantic import pydantic_model_creator
 
-from pydantic import BaseModel
-
-
-class Status(BaseModel):
-    message: str
-
-
-class AuthDetails(BaseModel):
-    username: str
-    password: str
-
 
 class Users(models.Model):
 
     username = fields.CharField(max_length=20, unique=True)
     name = fields.CharField(max_length=50, null=True)
     family_name = fields.CharField(max_length=50, null=True)
-    category = fields.CharField(max_length=30, default="misc")
-    password_hash = fields.CharField(max_length=128, null=True)
+    category = fields.CharField(max_length=30, default='misc')
+    password = fields.CharField(max_length=128, null=False)
     created_at = fields.DatetimeField(auto_now_add=True)
     modified_at = fields.DatetimeField(auto_now=True)
 
@@ -32,9 +21,9 @@ class Users(models.Model):
         return self.username
 
     class PydanticMeta:
-        computed = ["full_name"]
-        exclude = ["password_hash"]
+        computed = ['full_name']
+        # exclude = ["password_hash"]
 
 
-User_Pydantic = pydantic_model_creator(Users, name="User")
-UserIn_Pydantic = pydantic_model_creator(Users, name="UserIn", exclude_readonly=True)
+User_Pydantic = pydantic_model_creator(Users, name='User', exclude=('password', ))
+UserIn_Pydantic = pydantic_model_creator(Users, name='UserIn', exclude_readonly=True)
