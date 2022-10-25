@@ -1,16 +1,28 @@
-from typing import Any, Dict
+from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from pydantic import BaseModel
 
-from fastapi import FastAPI
+from tortoise.contrib.fastapi import register_tortoise
+
 
 app = FastAPI()
 
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token")
 
-@app.get('/')
-async def root() -> Dict[str, Any]:
-    return {'message': 'Hello World'}
+TORTOISE_ORM = {
+    "connections": {"default": "postgres://postgres:password@localhost:5432/vilka_db"},
+    "apps": {
+        "models": {
+            "models": ["src.authorization.models", "aerich.models"],
+            "default_connection": "default",
+        },
+    },
+}
 
-
-@app.get('/hello/{name}')
-async def say_hello(name: str) -> Dict[str, Any]:
-    print('name')
-    return {'message': f'Hello {name}'}
+register_tortoise(
+    app,
+    db_url="postgres://postgres:password@localhost:5432/vilka_db",
+    modules={"models": ["src.authorization.models"]},
+    generate_schemas=True,
+    add_exception_handlers=True,
+)
