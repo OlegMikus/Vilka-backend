@@ -1,26 +1,29 @@
 import os
+from datetime import datetime, timedelta
+from typing import Dict
 
 import jwt
-from fastapi import HTTPException, Security
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi import Depends, HTTPException
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from passlib.context import CryptContext
-from datetime import datetime, timedelta
+
+from src.authorization.db.models.user import User
 
 
 class AuthHandler:
-    security = HTTPBearer()
-    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-    secret = os.environ.get("SECRET_KEY", "aaaa")
+    oauth2_scheme = OAuth2PasswordBearer(tokenUrl='token')
+    pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
+    secret = os.environ.get('SECRET_KEY', 'aaaa')
 
-    def get_password_hash(self, password):
+    def get_password_hash(self, password: str) -> str:
         return self.pwd_context.hash(password)
 
-    def verify_password(self, plain_password, hashed_password):
+    def verify_password(self, plain_password: str, hashed_password: str) -> bool:
         return self.pwd_context.verify(plain_password, hashed_password)
 
-    def encode_access_token(self, user_id):
+    def __encode_access_token(self, user_id: str) -> str:
         payload = {
-            'exp': datetime.utcnow() + timedelta(days=0, minutes=5),
+            'exp': datetime.utcnow() + timedelta(days=0, minutes=60),
             'iat': datetime.utcnow(),
             'sub': user_id
         }
@@ -30,7 +33,7 @@ class AuthHandler:
             algorithm='HS256'
         )
 
-    def encode_refresh_token(self, user_id):
+    def __encode_refresh_token(self, user_id: str) -> str:
         payload = {
             'exp': datetime.utcnow() + timedelta(days=1),
             'iat': datetime.utcnow(),
@@ -42,14 +45,29 @@ class AuthHandler:
             algorithm='HS256'
         )
 
-    def decode_token(self, token):
+    def encode_token_pair(self, user_id: str) -> Dict[str, str]:
+        return {
+            'access_token': self.__encode_access_token(user_id),
+            'refresh_token': self.__encode_refresh_token(user_id),
+        }
+
+    def __decode_token(self, token: str = Depends(oauth2_scheme)) -> str:
         try:
             payload = jwt.decode(token, self.secret, algorithms=['HS256'])
             return payload['sub']
         except jwt.ExpiredSignatureError:
             raise HTTPException(status_code=401, detail='Signature has expired')
-        except jwt.InvalidTokenError as e:
+        except jwt.InvalidTokenError:
             raise HTTPException(status_code=401, detail='Invalid token')
 
-    def auth_wrapper(self, auth: HTTPAuthorizationCredentials = Security(security)):
-        return self.decode_token(auth.credentials)
+    async def authenticate_user(self, form_data: OAuth2PasswordRequestForm) -> User | bool:
+        user = await User.get_or_none(username=form_data.username)
+        if not user:
+            return False
+        if not self.verify_password(form_data.password, user.password):
+            return False
+        return user
+
+    async def get_user(self, token: str = Depends(oauth2_scheme)) -> User:
+        user = await User.get(id=self.__decode_token(token))
+        return user

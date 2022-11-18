@@ -1,6 +1,7 @@
 import uuid
+from typing import Optional
 
-from tortoise import fields, models
+from tortoise import BaseDBAsyncClient, fields, models
 
 from src.authorization.db.managers import AliveOnlyManager
 
@@ -17,4 +18,12 @@ class BaseModel(models.Model):
         abstract = True
 
     class PydanticMeta:
-        exclude = ('is_alive',)
+        exclude = [
+            'is_alive',
+            'created_at',
+            'updated_at',
+        ]
+
+    async def delete(self, using_db: Optional[BaseDBAsyncClient] = None) -> None:
+        self.is_alive = False
+        await self.save()

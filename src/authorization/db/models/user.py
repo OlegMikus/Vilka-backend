@@ -16,6 +16,9 @@ class User(BaseModel):
         table = 'user'
         ordering = ('email', )
 
+    class PydanticMeta(BaseModel.PydanticMeta):
+        exclude = BaseModel.PydanticMeta.exclude + ['password']
+
 
 User_Pydantic = pydantic_model_creator(User, name='User', exclude=('password', ))
 UserIn_Pydantic = pydantic_model_creator(User, name='UserIn', exclude_readonly=True)

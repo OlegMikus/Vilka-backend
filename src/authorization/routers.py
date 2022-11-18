@@ -1,10 +1,15 @@
-from typing import Dict
+import uuid
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
-from tortoise.contrib.fastapi import HTTPNotFoundError
+from starlette import status
+from tortoise import Tortoise
 from tortoise.contrib.pydantic import PydanticModel
 
+from src.authorization.db.models.friends import (Friendship,
+                                                 Friendship_Pydantic,
+                                                 FriendshipQS_Pydantic)
 from src.authorization.db.models.user import (User, User_Pydantic,
                                               UserIn_Pydantic)
 from src.authorization.utils.auth import AuthHandler
@@ -14,8 +19,8 @@ router = APIRouter()
 auth_handler = AuthHandler()
 
 
-class Status(BaseModel):
-    message: str
+class CreateFriendRequest(BaseModel):
+    friend_id: uuid.UUID
 
 
 class AuthDetails(BaseModel):
@@ -32,28 +37,43 @@ async def register(user: UserIn_Pydantic) -> PydanticModel:
     return await User_Pydantic.from_tortoise_orm(user_obj)
 
 
-@router.post('/login')
-async def login(auth_details: AuthDetails) -> Dict[str, str]:
-    user = await User.get_or_none(username=auth_details.username)
-    if (user is None) or (not auth_handler.verify_password(auth_details.password, user.password)):
-        raise HTTPException(status_code=401, detail='Invalid username and/or password')
-    token = auth_handler.encode_access_token(user.username)
-    return {'token': token}
+class Token(BaseModel):
+    access_token: str
+    refresh_token: str
 
 
-@router.patch('/user/', response_model=User_Pydantic, responses={404: {'model': HTTPNotFoundError}})
-async def update_user(user: UserIn_Pydantic, username=Depends(auth_handler.auth_wrapper)) -> PydanticModel:
-    user_by_name = await User.get_or_none(username=username)
-    if not user_by_name:
-        raise HTTPException(status_code=401, detail='Invalid username and/or password')
-    user.password = auth_handler.get_password_hash(user.password)
-    await User.filter(username=username).update(**user.dict(exclude_unset=True))
-    return await User_Pydantic.from_queryset_single(User.get(username=username))
+@router.post('/token', response_model=Token)
+async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
+    user = await auth_handler.authenticate_user(form_data)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail='Incorrect username or password',
+            headers={'WWW-Authenticate': 'Bearer'},
+        )
+    return auth_handler.encode_token_pair(str(user.id))
 
 
-@router.delete("/user/{user_id}", response_model=Status, responses={404: {'model': HTTPNotFoundError}})
-async def delete_user(user_id: int) -> Status:
-    deleted_count = await User.filter(id=user_id).delete()
-    if not deleted_count:
-        raise HTTPException(status_code=404, detail=f'User {user_id} not found')
-    return Status(message=f'Deleted user {user_id}')
+@router.post('/create-friend-request')
+async def create_friend_request(
+        body: CreateFriendRequest,
+        user: User = Depends(auth_handler.get_user)
+) -> PydanticModel:
+
+    friendship_data = {
+        'addressee_id': body.friend_id,
+        'requester_id': user.id,
+        'specifier_id': user.id,
+    }
+    friendship_object = await Friendship.create(**friendship_data)
+    return await Friendship_Pydantic.from_tortoise_orm(friendship_object)
+
+
+@router.get('/get-friendship-requests')
+async def get_friendship_requests(
+        user: User = Depends(auth_handler.get_user)
+) -> PydanticModel:
+    Tortoise.init_models(['src.authorization.db.models'], 'user')
+    friendship_objects = Friendship.objects.filter(addressee_id=str(user.id))
+
+    return await FriendshipQS_Pydantic.from_queryset(friendship_objects)
