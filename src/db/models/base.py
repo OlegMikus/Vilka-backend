@@ -3,7 +3,7 @@ from typing import Optional
 
 from tortoise import BaseDBAsyncClient, fields, models
 
-from src.authorization.db.managers import AliveOnlyManager
+from src.db.managers import AliveOnlyManager
 
 
 class BaseModel(models.Model):

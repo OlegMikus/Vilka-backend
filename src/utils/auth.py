@@ -7,11 +7,11 @@ from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from passlib.context import CryptContext
 
-from src.authorization.db.models.user import User
+from src.db.models.user import User
 
 
 class AuthHandler:
-    oauth2_scheme = OAuth2PasswordBearer(tokenUrl='token')
+    oauth2_scheme = OAuth2PasswordBearer(tokenUrl='user/token')
     pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
     secret = os.environ.get('SECRET_KEY', 'aaaa')
 
@@ -71,3 +71,6 @@ class AuthHandler:
     async def get_user(self, token: str = Depends(oauth2_scheme)) -> User:
         user = await User.get(id=self.__decode_token(token))
         return user
+
+    async def __call__(self, token: str = Depends(oauth2_scheme)) -> User:
+        return await self.get_user(token)

@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS "friendship" (
     "addressee_id" UUID NOT NULL REFERENCES "user" ("id") ON DELETE CASCADE,
     "requester_id" UUID NOT NULL REFERENCES "user" ("id") ON DELETE CASCADE,
     "specifier_id" UUID NOT NULL REFERENCES "user" ("id") ON DELETE CASCADE,
-    CONSTRAINT "uid_friendship_request_6b9cfc" UNIQUE ("requester_id", "addressee_id")
+    CONSTRAINT "uid_friendship_request_6ceaff" UNIQUE ("requester_id", "addressee_id", "is_alive")
 );
 COMMENT ON COLUMN "friendship"."status_code" IS 'REQUESTED: REQUESTED\nACCEPTED: ACCEPTED\nDECLINED: DECLINED\nBLOCKED: BLOCKED';
 COMMENT ON TABLE "friendship" IS 'Friendship model';

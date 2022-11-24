@@ -2,10 +2,12 @@ from enum import Enum
 from typing import Iterable, Optional
 
 from tortoise import BaseDBAsyncClient, Tortoise, fields
-from tortoise.contrib.pydantic import (pydantic_model_creator,
-                                       pydantic_queryset_creator)
+from tortoise.contrib.pydantic import (
+    pydantic_model_creator,
+    pydantic_queryset_creator,
+)
 
-from src.authorization.db.models.base import BaseModel
+from src.db.models.base import BaseModel
 
 
 class StatusCode(str, Enum):
@@ -36,9 +38,3 @@ class Friendship(BaseModel):
         if self.requester == self.addressee:
             raise Exception
         await super(Friendship, self).save(using_db, update_fields, force_create, force_update)
-
-
-Tortoise.init_models(['src.authorization.db.models.friends', 'src.authorization.db.models'], 'user')
-
-Friendship_Pydantic = pydantic_model_creator(Friendship)
-FriendshipQS_Pydantic = pydantic_queryset_creator(Friendship)

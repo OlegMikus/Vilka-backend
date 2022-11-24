@@ -1,8 +1,8 @@
 from tortoise import fields
 from tortoise.contrib.pydantic import pydantic_model_creator
 
-from src.authorization.db.models.base import BaseModel
-from src.authorization.db.validators import EmailValidator
+from src.db.models.base import BaseModel
+from src.db.validators import EmailValidator
 
 
 class User(BaseModel):
@@ -21,4 +21,4 @@ class User(BaseModel):
 
 
 User_Pydantic = pydantic_model_creator(User, name='User', exclude=('password', ))
-UserIn_Pydantic = pydantic_model_creator(User, name='UserIn', exclude_readonly=True)
+UserIn_Pydantic = pydantic_model_creator(User, name='UserIn', include=('password', ))

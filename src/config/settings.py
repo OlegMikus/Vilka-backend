@@ -1,12 +1,12 @@
 from src.config.constants import DB_URL
 
 TORTOISE_MODULES = {
-    'user': ['src.authorization.db.models'],
+    'user': ['src.db.models'],
 }
 
 TORTOISE_APPS = {
     'user': {
-        'models': ['src.authorization.db.models', 'aerich.models'],
+        'models': ['src.db.models', 'aerich.models'],
         'default_connection': 'default',
     },
 }
