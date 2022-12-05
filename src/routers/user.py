@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from tortoise.contrib.pydantic import PydanticModel
 
-from src.db.models.user import UserIn_Pydantic, User, User_Pydantic
-from src.exceptions import UnauthorizedError, BadRequestError
+from src.db.models.user import User, User_Pydantic, UserIn_Pydantic
+from src.exceptions import BadRequestError
 from src.pydantic_models.friends import Token
 from src.utils.auth import AuthHandler
 
@@ -16,7 +16,7 @@ auth_handler = AuthHandler()
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
     user = await auth_handler.authenticate_user(form_data)
     if not user:
-        raise UnauthorizedError()
+        raise BadRequestError(detail='Incorrect username or password')
     return auth_handler.encode_token_pair(str(user.id))
 
 

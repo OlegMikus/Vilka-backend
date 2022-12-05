@@ -1,23 +1,17 @@
 import uuid
-from fastapi import APIRouter, Depends
+
+from fastapi import APIRouter, Depends, Response
 from starlette import status
 from tortoise.contrib.pydantic import PydanticModel
 from tortoise.expressions import Q
 
-from src.db.models.friends import (
-    Friendship,
-    StatusCode,
-)
-from src.db.models.user import (
-    User,
-)
-from src.pydantic_models.friends import (
-    CreateFriendRequest,
-    FriendshipPydantic,
-    FriendshipPydanticQS,
-)
-from src.utils.auth import AuthHandler
+from src.db.models.friends import Friendship, StatusCode
+from src.db.models.user import User
 from src.exceptions import NotFoundError
+from src.pydantic_models.friends import (CreateFriendRequest,
+                                         FriendshipPydantic,
+                                         FriendshipPydanticQS)
+from src.utils.auth import AuthHandler
 
 router = APIRouter()
 
@@ -109,5 +103,8 @@ async def unblock_friend(friendship_id: uuid.UUID, user: User = Depends(auth_han
 
 
 @router.get('/get-blocked-friends')
-async def get_blocked_friends(user: User = Depends(auth_handler)) -> PydanticModel:
-    pass
+async def get_blocked_friends(user: User = Depends(auth_handler)) -> Response:
+    blocked_users = Friendship.filter(specifier_id=str(user.id),
+                                      status_code=StatusCode.BLOCKED)
+
+    return await FriendshipPydanticQS.from_queryset(blocked_users)
