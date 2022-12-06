@@ -1,0 +1,42 @@
+version: '3.9'
+
+networks:
+  vilka_network:
+    driver: bridge
+
+services:
+  app_auth:
+    restart: always
+    build:
+      context: .
+      dockerfile: ./srv/app/Dockerfile
+    command: ['poetry', 'run','uvicorn', 'main:app', '--reload', '--port', '5001', '--host', '0.0.0.0']
+    volumes:
+      - .:/app
+    ports:
+      - 5001:5001
+    expose:
+      - 5001
+    depends_on:
+      - postgres_db
+    networks:
+      - vilka_network
+
+  postgres_db:
+    image: postgres:14.5
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      DB_TYPE: "${DB_TYPE}"
+      DB_USER: "${DB_USER}"
+      DB_PASSWORD: "${DB_PASSWORD}"
+      DB_NAME: "${DB_NAME}"
+      DB_PORT: "${DB_PORT}"
+      DB_HOST: "${DB_HOST}"
+    ports:
+      - 5432:5432
+    networks:
+      - vilka_network
+
+volumes:
+  postgres_data:
