@@ -23,10 +23,23 @@ CREATE TABLE IF NOT EXISTS "friendship" (
     "addressee_id" UUID NOT NULL REFERENCES "user" ("id") ON DELETE CASCADE,
     "requester_id" UUID NOT NULL REFERENCES "user" ("id") ON DELETE CASCADE,
     "specifier_id" UUID NOT NULL REFERENCES "user" ("id") ON DELETE CASCADE,
-    CONSTRAINT "uid_friendship_request_6ceaff" UNIQUE ("requester_id", "addressee_id", "is_alive")
+    CONSTRAINT "uid_friendship_request_6b9cfc" UNIQUE ("requester_id", "addressee_id")
 );
 COMMENT ON COLUMN "friendship"."status_code" IS 'REQUESTED: REQUESTED\nACCEPTED: ACCEPTED\nDECLINED: DECLINED\nBLOCKED: BLOCKED';
 COMMENT ON TABLE "friendship" IS 'Friendship model';
+CREATE TABLE IF NOT EXISTS "photo" (
+    "id" UUID NOT NULL  PRIMARY KEY,
+    "created_at" TIMESTAMPTZ NOT NULL  DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ NOT NULL  DEFAULT CURRENT_TIMESTAMP,
+    "is_alive" BOOL NOT NULL  DEFAULT True,
+    "destination" VARCHAR(256) NOT NULL,
+    "name" VARCHAR(256) NOT NULL,
+    "type" VARCHAR(128) NOT NULL,
+    "size" BIGINT NOT NULL,
+    "hash" VARCHAR(512) NOT NULL,
+    "user_id" UUID NOT NULL REFERENCES "user" ("id") ON DELETE CASCADE
+);
+COMMENT ON TABLE "photo" IS 'Photo model';
 CREATE TABLE IF NOT EXISTS "aerich" (
     "id" SERIAL NOT NULL PRIMARY KEY,
     "version" VARCHAR(255) NOT NULL,
