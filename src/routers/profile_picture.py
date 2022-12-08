@@ -1,3 +1,5 @@
+import os
+
 from fastapi import APIRouter, Depends, UploadFile
 from fastapi.responses import Response
 
@@ -34,6 +36,9 @@ async def create_upload_file(file: UploadFile, user: User = Depends(auth_handler
 
 @router.post('/upload-photo/')
 async def create_upload_file(file: UploadFile, user: User = Depends(auth_handler)):
+
+    os.makedirs(f'./storage/{user.id}', 0o777, exist_ok=True)
     with open(f"./storage/{user.id}/{file.filename}", 'wb') as files:
         files.write(await file.read())
+    print(dir(file))
     return {'filename': file.filename}
